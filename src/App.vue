@@ -38,9 +38,7 @@ import { ref } from "vue";
 import axios from "axios";
 
 const selectedFiles = ref([]);
-const rm -rf node_modules package-lock.json
-npm install
-uploading = ref(false);
+const uploading = ref(false);
 const result = ref(null);
 const error = ref("");
 
