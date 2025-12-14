@@ -260,7 +260,7 @@ input {
 
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:  1fr;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
   margin: -6px -6px 14px;
   padding: 6px;

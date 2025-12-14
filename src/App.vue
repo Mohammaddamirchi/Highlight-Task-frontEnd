@@ -20,7 +20,7 @@
               >
                 آپلود فایل
               </button>
-              <button
+              <!-- <button
                 class="tabBtn"
                 :class="{ tabBtnActive: activeTab === 'link' }"
                 type="button"
@@ -29,11 +29,11 @@
                 @click="activeTab = 'link'"
               >
                 پیست لینک
-              </button>
+              </button> -->
             </div>
 
             <p class="cardTitle" v-if="activeTab === 'upload'">فایل‌های صوتی را از دستگاه بارگذاری کنید</p>
-            <p class="cardTitle" v-else>Paste a YouTube / public media link to transcribe</p>
+            <!-- <p class="cardTitle" v-else>Paste a YouTube / public media link to transcribe</p> -->
 
             <section v-if="activeTab === 'upload'" role="tabpanel">
               <div
@@ -79,7 +79,7 @@
             </section>
 
 
-            <section v-else role="tabpanel">
+            <!-- <section v-else role="tabpanel">
               <div class="linkForm">
                 <input
                   v-model.trim="link"
@@ -94,7 +94,7 @@
                   Submitted link: <strong>{{ linkSubmitted }}</strong>
                 </p>
               </div>
-            </section>
+            </section> -->
           </div>
         </div>
       </section>
