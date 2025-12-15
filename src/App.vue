@@ -1,5 +1,5 @@
 <template>
-  <main class="main">
+  <main class="main" style="direction: rtl;">
     <div class="container">
       <section class="hero">
         <h1 class="heroTitle"><span>تبدیل صدا به متن</span></h1>
