@@ -20,20 +20,9 @@
               >
                 آپلود فایل
               </button>
-              <!-- <button
-                class="tabBtn"
-                :class="{ tabBtnActive: activeTab === 'link' }"
-                type="button"
-                role="tab"
-                :aria-selected="activeTab === 'link'"
-                @click="activeTab = 'link'"
-              >
-                پیست لینک
-              </button> -->
             </div>
 
             <p class="cardTitle" v-if="activeTab === 'upload'">فایل‌های صوتی را از دستگاه بارگذاری کنید</p>
-            <!-- <p class="cardTitle" v-else>Paste a YouTube / public media link to transcribe</p> -->
 
             <section v-if="activeTab === 'upload'" role="tabpanel">
               <div
@@ -66,10 +55,45 @@
                     <span>{{ pickedFiles.map((f) => f.name).join(', ') }}</span>
                   </div>
 
-                  <div v-if="result" style="margin-top: 10px; color: #0f5132">
-                    <strong>نتیجه تبدیل: </strong>
-                    <pre>{{ result }}</pre>
+                  <div v-if="result?.success" style="margin-top: 16px">
+
+                  <h3>📊 نتیجه تحلیل تماس</h3>
+
+                  <p>
+                    <strong>امتیاز کلی:</strong>
+                    {{ result.data.score }} / 5
+                  </p>
+
+                  <p>
+                    <strong>خلاصه:</strong><br />
+                    {{ result.data.summary }}
+                  </p>
+
+                  <div v-if="result.data.strengths?.length">
+                    <strong>نقاط قوت:</strong>
+                    <ul>
+                      <li v-for="(item, i) in result.data.strengths" :key="i">
+                        {{ item }}
+                      </li>
+                    </ul>
                   </div>
+
+                  <div v-if="result.data.weaknesses?.length">
+                    <strong>نقاط قابل بهبود:</strong>
+                    <ul>
+                      <li v-for="(item, i) in result.data.weaknesses" :key="i">
+                        {{ item }}
+                      </li>
+                    </ul>
+                  </div>
+
+                  <details style="margin-top: 12px">
+                    <summary style="cursor: pointer">📄 مشاهده متن کامل مکالمه</summary>
+                    <pre style="white-space: pre-wrap">{{ result.transcript }}</pre>
+                  </details>
+
+                </div>
+
 
                   <div v-if="error" style="margin-top: 10px; color: #842029">
                     <strong>خطا: </strong>{{ error }}
@@ -78,23 +102,6 @@
               </div>
             </section>
 
-
-            <!-- <section v-else role="tabpanel">
-              <div class="linkForm">
-                <input
-                  v-model.trim="link"
-                  class="input"
-                  placeholder="Paste link here (e.g. YouTube URL)"
-                  inputmode="url"
-                />
-                <button class="btn btnPrimary" type="button" :disabled="!link" @click="submitLink">
-                  Transcribe link
-                </button>
-                <p v-if="linkSubmitted" class="smallText" style="margin: 0">
-                  Submitted link: <strong>{{ linkSubmitted }}</strong>
-                </p>
-              </div>
-            </section> -->
           </div>
         </div>
       </section>
