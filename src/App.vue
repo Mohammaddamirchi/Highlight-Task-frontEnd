@@ -2,119 +2,201 @@
   <main class="main" style="direction: rtl;">
     <div class="container">
       <section class="hero">
-        <h1 class="heroTitle"><span>تبدیل صدا به متن</span></h1>
+        <h1 class="heroTitle">
+          <span>تبدیل صدا به متن</span>
+        </h1>
+
         <p class="heroSub">
-           به شما امکان می‌دهد فایل‌های صوتی را آپلود کنید یا لینک‌ها را جای‌گذاری کنید و به سرعت آنها را با هوش مصنوعی به متن تبدیل کنید
+          فایل صوتی خود را آپلود کنید تا متن و تحلیل مکالمه با هوش مصنوعی دریافت کنید
         </p>
 
         <div class="cardWrap">
-          <div class="card" aria-label="Upload card">
-            <div class="tabs" role="tablist" aria-label="Upload modes">
+          <div class="card">
+            <p class="cardTitle">آپلود فایل صوتی</p>
+
+            <div
+              class="dropzone"
+              :class="{ dropzoneActive: isDragging }"
+              @dragenter.prevent="isDragging = true"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="onDrop"
+            >
+              <input
+                ref="fileInputEl"
+                type="file"
+                class="srOnly"
+                multiple
+                accept=".wav"
+                @change="onPickFilesAndSubmit"
+              />
+
               <button
-                class="tabBtn"
-                :class="{ tabBtnActive: activeTab === 'upload' }"
+                class="btn btnPrimary"
                 type="button"
-                role="tab"
-                :aria-selected="activeTab === 'upload'"
-                @click="activeTab = 'upload'"
+                :disabled="loading"
+                @click="openFileDialog"
               >
-                آپلود فایل
+                {{ loading ? 'در حال پردازش...' : 'انتخاب فایل' }}
               </button>
+
+              <div class="smallText">
+                <div><strong>فرمت مجاز:</strong> wav</div>
+
+                <div v-if="pickedFiles.length" style="margin-top: 8px">
+                  <strong>فایل‌ها:</strong>
+                  {{ pickedFiles.map(f => f.name).join(', ') }}
+                </div>
+              </div>
             </div>
 
-            <p class="cardTitle" v-if="activeTab === 'upload'">فایل‌های صوتی را از دستگاه بارگذاری کنید</p>
+            <!-- ERROR -->
+            <div v-if="error" class="errorBox">
+              ❌ {{ error }}
+            </div>
 
-            <section v-if="activeTab === 'upload'" role="tabpanel">
-              <div
-                class="dropzone"
-                :class="{ dropzoneActive: isDragging }"
-                @dragenter.prevent="onDragEnter"
-                @dragover.prevent="onDragOver"
-                @dragleave.prevent="onDragLeave"
-                @drop.prevent="onDrop"
-              >
+            <!-- TRANSCRIPT -->
+            <div v-if="result?.transcript" class="resultBox">
+              <h3>متن مکالمه</h3>
+              <pre>{{ result.transcript }}</pre>
+            </div>
 
-                <input
-                  ref="fileInputEl"
-                  type="file"
-                  class="srOnly"
-                  multiple
-                  :accept="acceptedMime"
-                  @change="onPickFilesAndSubmit"
-                />
+            <!-- ANALYSIS -->
+            <div v-if="result?.data" class="resultBox">
+              <h3>تحلیل مکالمه</h3>
 
-                <button class="btn btnPrimary" type="button" @click="openFileDialog" :disabled="loading">
-                  {{ loading ? 'در حال پردازش...' : 'انتخاب فایل' }}
-                </button>
+              <p><strong>امتیاز:</strong> {{ result.data.score }}/5</p>
 
-    <div v-if="error" class="text-red-500 mt-4">{{ error }}</div>
+              <p><strong>خلاصه:</strong></p>
+              <p>{{ result.data.summary }}</p>
 
-    <div v-if="result" class="mt-6">
-      <h2 class="text-xl font-semibold mb-2">Transcript</h2>
-      <pre class="bg-gray-100 p-3 rounded overflow-x-auto">{{ result.transcript }}</pre>
+              <p><strong>نقاط قوت:</strong></p>
+              <ul>
+                <li v-for="(s, i) in result.data.strengths" :key="i">
+                  {{ s }}
+                </li>
+              </ul>
 
-      <h2 class="text-xl font-semibold mt-4 mb-2">Resolution</h2>
-      <pre>{{ result.resolution }}</pre>
-
-      <h2 class="text-xl font-semibold mt-4 mb-2">Analysis</h2>
-      <pre>{{ result.analysis }}</pre>
-
-      <h2 class="text-xl font-semibold mt-4 mb-2">Action</h2>
-      <pre>{{ result.action }}</pre>
-
-      <h2 class="text-xl font-semibold mt-4 mb-2">Extra Insights</h2>
-      <pre>{{ result.extra }}</pre>
+              <p><strong>نقاط ضعف:</strong></p>
+              <ul>
+                <li v-for="(w, i) in result.data.weaknesses" :key="i">
+                  {{ w }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
+  </main>
 </template>
 
-<script setup>
-import { ref } from "vue";
-import axios from "axios";
+<script setup lang="ts">
+import axios from 'axios'
+import { ref } from 'vue'
 
-const selectedFiles = ref([]);
-const uploading = ref(false);
-const result = ref(null);
-const error = ref("");
+const fileInputEl = ref<HTMLInputElement | null>(null)
+const pickedFiles = ref<File[]>([])
+const loading = ref(false)
+const error = ref('')
+const result = ref<any>(null)
+const isDragging = ref(false)
 
-function handleFiles(event) {
-  selectedFiles.value = Array.from(event.target.files);
-  result.value = null;
-  error.value = "";
+function openFileDialog() {
+  fileInputEl.value?.click()
 }
 
-async function uploadFiles() {
-  if (!selectedFiles.value.length) return;
+function onDrop(e: DragEvent) {
+  isDragging.value = false
+  const files = Array.from(e.dataTransfer?.files ?? [])
+  if (files.length) {
+    pickedFiles.value = files
+    submitFiles()
+  }
+}
 
-  const formData = new FormData();
-  selectedFiles.value.forEach((file) => {
-    formData.append("files", file);
-  });
+function onPickFilesAndSubmit(e: Event) {
+  const input = e.target as HTMLInputElement
+  pickedFiles.value = Array.from(input.files ?? [])
+  if (pickedFiles.value.length) {
+    submitFiles()
+  }
+}
 
-  uploading.value = true;
-  error.value = "";
-  result.value = null;
+async function submitFiles() {
+  loading.value = true
+  error.value = ''
+  result.value = null
+
+  const formData = new FormData()
+  pickedFiles.value.forEach(file => {
+    formData.append('files', file)
+  })
 
   try {
-    const response = await axios.post("http://localhost:5000/upload_folder", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const res = await axios.post(
+      'http://localhost:5000/upload_folder',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    )
 
-    result.value = response.data;
-  } catch (err) {
-    console.error(err);
-    error.value = err.response?.data?.error || "Upload failed";
+    if (!res.data.success) {
+      throw new Error(res.data.error || 'خطای ناشناخته')
+    }
+
+    result.value = res.data
+  } catch (err: any) {
+    error.value =
+      err?.response?.data?.error ||
+      err?.message ||
+      'خطا در ارتباط با سرور'
   } finally {
-    uploading.value = false;
+    loading.value = false
   }
 }
 </script>
 
-<style>
-/* فقط برای کمی استایل بهتر */
-.container {
-  max-width: 700px;
+<style scoped>
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.dropzoneActive {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.btnPrimary {
+  padding: 10px 18px;
+  border-radius: 8px;
+}
+
+.resultBox {
+  margin-top: 20px;
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.errorBox {
+  margin-top: 16px;
+  color: #842029;
+  background: #f8d7da;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+pre {
+  white-space: pre-wrap;
 }
 </style>
